@@ -106,42 +106,58 @@ These plots help determine the optimal power for the soft threshold, ensuring th
 ### Step 4: Constructing the Network
 Once the soft threshold is selected, we use the `blockwiseModules()` function to construct the network and identify gene modules. The function takes the expression data, the selected power, and various other parameters for network construction:
 ```r
-power = sft$powerEstimate # Use the selected power
+# Turn data expression into topological overlap matrix
+power=sft$powerEstimate #4
+
+# Option 1: automatic
+cor <- WGCNA::cor
 net = blockwiseModules(datExpr, power = power,
                        TOMType = "signed", minModuleSize = 30,
                        reassignThreshold = 0, mergeCutHeight = 0.25,
                        numericLabels = TRUE, pamRespectsDendro = FALSE,
                        saveTOMs = FALSE,
                        verbose = 3)
+cor<- stats::cor
+sizeGrWindow(12, 9)
+mergedColors = labels2colors(net$colors)
+pdf(file = "4-module_tree_blockwise_30.pdf", width = 8, height = 6);
+plotDendroAndColors(net$dendrograms[[1]], mergedColors[net$blockGenes[[1]]],
+                    "Module colors",
+                    dendroLabels = FALSE, hang = 0.03,
+                    addGuide = TRUE, guideHang = 0.05)
+dev.off()
 ```
-The `blockwiseModules()` function divides genes into modules based on their co-expression patterns. In my data, i chose a signed network where both positive and negative correlations are considered (negative correlations are treated as zero).
+The `blockwiseModules()` function divides genes into modules based on their co-expression patterns.
 
 ### Step 5: Topological Overlap Matrix (TOM)
 For further analysis, the topological overlap matrix (TOM) is computed. TOM measures the similarity between genes based on their co-expression patterns, which is essential for identifying modules of co-expressed genes.
 
-#### Option 1: Automatic TOM Calculation
+#### Option 2a: Automatic TOM Calculation
 In this approach, TOM is calculated directly from the adjacency matrix using the `TOMsimilarity()` function:
 ```r
+power = power
 adjacency = adjacency(datExpr, power = power)
 TOM = TOMsimilarity(adjacency)
 dissTOM = 1 - TOM
 ```
-#### Option 2: Manual TOM Calculation
+#### Option 2b: Manual TOM Calculation
 Alternatively, TOM can be computed directly from the expression data using the `TOMsimilarityFromExpr()` function:
 ```r
 TOM = TOMsimilarityFromExpr(datExpr, power = power)
 dissTOM = 1 - TOM
+dim(dissTOM)
 ```
 The resulting `dissTOM` matrix represents the dissimilarity between genes, which can be used for further network analysis.
 
-## Step 6: Construct Modules (Proceeded with Gene Tree from Option 2b)
+## Step 6: Construct Modules
 
 ### Module Identification Using Dynamic Tree Cut
 First, we calculate the gene tree using hierarchical clustering on the topological overlap matrix (TOM), and then we plot the gene dendrogram.
 We then identify gene modules using a dynamic tree cut method. In this case, we set the minimum module size to 30 to ensure that only large modules are considered.
 ```r
 # Module identification using dynamic tree cut
-minModuleSize = 30
+geneTree = hclust(as.dist(dissTOM), method = "average");
+minModuleSize = 30;
 dynamicMods = cutreeDynamic(dendro = geneTree, distM = dissTOM, deepSplit = 2, 
                             pamRespectsDendro = FALSE, minClusterSize = 30)
 table(dynamicMods)
@@ -149,10 +165,8 @@ length(table(dynamicMods))
 ```
 Next, we convert the numeric module labels into colors and plot the dendrogram with module colors.
 ```r
-# Convert numeric labels into colors
 dynamicColors = labels2colors(dynamicMods)
 table(dynamicColors)
-# Plot the dendrogram and colors underneath
 pdf(file = "4-module_tree.pdf", width = 8, height = 6)
 plotDendroAndColors(geneTree, dynamicColors, "Dynamic Tree Cut", dendroLabels = FALSE,
                     hang = 0.03, addGuide = TRUE, guideHang = 0.05, main = "Gene dendrogram and module colors")
@@ -202,7 +216,6 @@ write.table(merge$newMEs, file = "newMEs1.txt")  after merging scores
 ```
 ![image](https://github.com/user-attachments/assets/d8547c22-1975-4698-a1bf-f04f0b4ed601)
 
-
 ### Calculate Pearson Correlations Between Module Eigen-genes and Clinical Traits
 ![image](https://github.com/user-attachments/assets/4cf6428e-8361-48a7-ad8a-925ae48a7e91)
 
@@ -212,7 +225,7 @@ bac_traits = bac_traits[, -1]
 ### sample names should be consistent in eigen genes and traits !!!!
 bac_traits = bac_traits[match(rownames(MEs), rownames(bac_traits)), ]
 table(rownames(MEs) == rownames(bac_traits))
-MEs_path <- "sev_22.txt"     #for one severity per time as we are correlating each disease severity with clinical parameter
+MEs_path <- "severe.txt"     #for one severity per time as we are correlating each disease severity with clinical parameter
 MEs_new <- read.table(MEs_path, header = TRUE)
 ![image](https://github.com/user-attachments/assets/2088bbc9-924b-4ade-9a1e-6feac02d7009)
 
@@ -226,7 +239,7 @@ write.table(moduleTraitCor,file="moduleTrait_correlation_11.txt");
 write.table(moduleTraitPvalue,file="moduleTrait_pValue_11.txt");
 ### Plot heatmap of module-traits relationship
 sizeGrWindow(10,6)
-# Will display correlations and their p-values
+### Will display correlations and their p-values
 textMatrix =  paste(signif(moduleTraitCor, 2), "\n(",
                     signif(moduleTraitPvalue, 1), ")", sep = "");
 dim(textMatrix) = dim(moduleTraitCor)
