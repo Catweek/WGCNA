@@ -1,6 +1,17 @@
 # WGCNA
 This repository contains R scripts and associated data used for performing Weighted Gene Co-expression Network Analysis (WGCNA). The analysis is aimed at exploring gene expression patterns across samples, identifying modules of highly correlated genes, and examining their relationships with clinical traits or other factors.
 
+This repository has input files and R script needed. 
+All that is required for the tutorial in the Youtube Channel (Liquid Brain, https://www.youtube.com/c/LiquidBrain)
+
+It covers: 
+1. What data you need for WGCNA
+2. How to perform network construction and module detection
+3. Correlate the modules with external trait (continuous type)
+4. Further investigation on particular module-trait relationship
+5. Visualization (e.g. heatmap)
+6. Summary of the whole WGCNA analysis
+
 ## Data Overview
 ### Data Normalization (Must)
 My data was normalised. However if your data is not normalsied, you must do it with DESeq2 (codes are attached in .R). Just uncomment and modify to use the `DESeq2` package. Normalization is important to account for differences in library sizes or other technical biases in RNA-seq data. 
@@ -264,8 +275,12 @@ dev.off()
 
 Severe data association with clincial parameters
 
-### Summary 
+### Summary:
 head(datExpr)[1:5,1:5] # transcriptome data
 head(sample_metadata)[1:5,] # metadata (sample info)
 head(bac_traits)[1:5,1:5] # external trait
 
+### References:
+
+The original tutorial provided by the creators (Peter Langfelder and Steve Horvath) https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/
+A nice Nature Plants paper by Yu et al. https://www.nature.com/articles/s41477-021-00897-y (Check their "data availability" section for the link to the github R script)
